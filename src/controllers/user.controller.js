@@ -47,27 +47,35 @@ const registerUser = asyncHandler(async (req, res) => {
     }  //       ------>     Checks all field in same loop, if value returns out to be true for any of one field -> ApiError is thrown 
 
     // STEP - 3
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or : [{ username }, { email }]
     })
     if(existedUser){
         throw new ApiError(409, "User with email or username already exists")
     }
-
+    // console.log(req.files);
+    
     // STEP - 4 and 5
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    const avatarLocalPath = req.files?.avatar?.[0]?.path;
     if(!avatarLocalPath){
-        throw new ApiError(400, "Avatar file is required")
+        throw new ApiError(400, "Avatar file is required for Local Path")
     }
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
-    if(!coverImageLocalPath){
-        throw new ApiError(400, "Cover Image file is required")
+    // const coverImageLocalPath = req.files?.coverImage?.[0]?.path ;
+    let coverImageLocalPath
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        coverImageLocalPath = req.files.coverImage[0].path
     }
+    // if(!coverImageLocalPath){
+    //     throw new ApiError(400, "Cover Image file is required For Local Path")
+    // }
 
     // STEP - 6
+    // console.log("Avatar local path:", avatarLocalPath);
+    // console.log("CoverImage local path:", coverImageLocalPath);
+
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     if(!avatar){
-        throw new ApiError(400, "Avatar file is required")
+        throw new ApiError(400, "Avatar file is required for upload on Cloudinary")
     }
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
