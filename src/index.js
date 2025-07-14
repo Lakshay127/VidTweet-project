@@ -20,28 +20,6 @@ connectDB()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
 -----------------------------FIRST APPROACH-------------------------------
 import mongoose from "mongoose"
