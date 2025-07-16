@@ -2,11 +2,11 @@ import mongoose, {Schema} from  "mongoose"
 
 const playlistSchema = new Schema({
     name: {
-        type: string,
+        type: String,
         required: true,
     },
     description: {
-        type: string,
+        type: String,
         required: true,
     },
     video: [
@@ -23,4 +23,4 @@ const playlistSchema = new Schema({
 }, {timestamps: true})
 
 
-export const Playlist = mongoose.model("Playlist", playlistSchema)
+export const Playlist = mongoose.models.Playlist || mongoose.model('Playlist', playlistSchema)
