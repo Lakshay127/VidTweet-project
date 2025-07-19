@@ -12,12 +12,12 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     }
     const videoLike = await Like.findOne({video: videoId,    user: req.user._id})
     if (videoLike) {
-        // If like exists, remove it
+        // If like exists, removing it
         await Like.deleteOne({video: videoId, user: req.user._id})
         return res.status(200).json(new ApiResponse(200, {}, "Video Like removed"))
     } 
     else {
-        // If like does not exist, create it
+        // If like does not exist, making a new like
         const newLike = new Like({
             video: videoId,
             user: req.user._id
