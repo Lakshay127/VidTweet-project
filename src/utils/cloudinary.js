@@ -30,5 +30,27 @@ const uploadOnCloudinary = async (localFilePath) => {
     }  
 };
 
+const deleteFromCloudinary = async (CloudinaryFilePath) => {
+
+    try {
+        if(!CloudinaryFilePath){
+            return null  //No file Found
+        }
+        // Deleting file on cloudinary
+        const response = await cloudinary.uploader.destroy(CloudinaryFilePath, {
+            resource_type: "auto"
+        })
+        if (response.result !== "ok") {
+            console.warn("Cloudinary deletion warning:", response);
+        }
+        // File Deleted Successfully
+        return response
+        
+    } catch (error) {
+        console.error("Cloudinary deletion error:", error);
+        return null;
+    }  
+};
+
 export {uploadOnCloudinary}
 
