@@ -2,9 +2,14 @@ import mongoose, {isValidObjectId} from "mongoose"
 import {Video} from "../models/video.model.js"
 import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
-import {ApiResponse} from "../utils/ApiResponse.js"
+import {ApiResponse} from "../utils/ApiResponses.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import {uploadOnCloudinary, deleteFromCloudinary} from "../utils/cloudinary.js"
+
+const convertToSeconds = (durationStr) => {
+  const [minutes, seconds] = durationStr.split(":").map(Number);
+  return minutes * 60 + seconds;
+};
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -51,7 +56,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     if([title, description, duration].some((field) => field.trim() === "")){
         throw new ApiError(400, "All Fields are required")
     }
-    const videoLocalPath = req.files?.videofile?.[0].path;
+    const videoLocalPath = req.files?.videoFile?.[0].path;
     if(!videoLocalPath){
         throw new ApiError(400, "Video File is required in Local path")
     }
@@ -73,17 +78,18 @@ const publishAVideo = asyncHandler(async (req, res) => {
     }
 
     const owner = req.user._id;
+    const numericDuration = convertToSeconds(duration); 
 
     const video = await Video.create({
         videofile : videoPath.url,
         thumbnail: thumbnailPath.url, 
         title,
         description, 
-        duration,
+        duration: numericDuration,
         owner
     })
     const createdVideo = await Video.findById(video._id).select(
-        "-thumbnail -duration"
+        "-thumbnail "
     )
     if(!createdVideo){
         throw new ApiError(500, "Error in creating video")
@@ -100,7 +106,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     if (!isValidObjectId(videoId)) {
         throw new ApiError(400, "Invalid video ID")
     }
-    const video = await Video.findById(videoId).populate('user', 'username email')
+    const video = await Video.findById(videoId).populate("owner", "username email")
     if (!video) {
         throw new ApiError(404, "Video not found")
     }
@@ -122,7 +128,11 @@ const updateVideo = asyncHandler(async (req, res) => {
     if (!title || !description) {
         throw new ApiError(400, "All fields are required")
     }
-    const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
+    const thumbnailLocalPath = req.file?.path;
+    const oldThumbnail = video.thumbnail
+    if (oldThumbnail) {
+        await deleteFromCloudinary(oldThumbnail)
+    } 
     if(!thumbnailLocalPath){
         throw new ApiError(400, "Thumbnail file is required in Local Path")
     }

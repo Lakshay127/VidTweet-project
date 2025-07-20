@@ -30,16 +30,21 @@ const uploadOnCloudinary = async (localFilePath) => {
     }  
 };
 
-const deleteFromCloudinary = async (CloudinaryFilePath) => {
+const deleteFromCloudinary = async (cloudinaryFilePath) => {
 
     try {
-        if(!CloudinaryFilePath){
+        if(!cloudinaryFilePath){
             return null  //No file Found
         }
         // Deleting file on cloudinary
-        const response = await cloudinary.uploader.destroy(CloudinaryFilePath, {
-            resource_type: "auto"
-        })
+        const isVideo = cloudinaryFilePath.includes(".mp4") || cloudinaryFilePath.includes(".mov");
+        const resourceType = isVideo ? "video" : "image";
+
+        const publicId = cloudinaryFilePath.split("/").pop().split(".")[0]; // get file name without extension
+
+        const response = await cloudinary.uploader.destroy(publicId, {
+            resource_type: resourceType
+        });
         if (response.result !== "ok") {
             console.warn("Cloudinary deletion warning:", response);
         }
@@ -52,5 +57,5 @@ const deleteFromCloudinary = async (CloudinaryFilePath) => {
     }  
 };
 
-export {uploadOnCloudinary}
+export {uploadOnCloudinary, deleteFromCloudinary}
 
