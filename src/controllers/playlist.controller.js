@@ -12,14 +12,15 @@ const createPlaylist = asyncHandler(async (req, res) => {
     if([name, description].some((field) => (field.trim() || "") === "")){
         throw new ApiError(400, "All fields are required")
     }
-    if(!req.body || !req.body._id){
-        throw new ApiError(400, "Invalid User")
-    }
     const owner = req.user._id
+    if(!owner){
+        throw new ApiError(401, "Unauthorized user")
+    }
     const playlist = await Playlist.create({
         name, 
         description, 
-        owner
+        owner, 
+        video: []
     })
     if(!playlist){
         throw new ApiError(500, "Error in creating playlist")

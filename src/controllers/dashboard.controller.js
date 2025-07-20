@@ -6,27 +6,7 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponses.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {User} from "../models/user.model.js"
-    // TODO: Get the channel stats like total video views, total subscribers, total videos, total likes etc.
-    
-    
-    // const channelId = req.user._id
-    // const channel = await User.findById(channelId)
-    // if (!channel) { 
-    //     throw new ApiError(404, "Channel not found")
-    // }
-    // const totalVideos = await Video.countDocuments({ owner: channelId })
-    // const totalViews = await Video.aggregate([
-    //     { $match: { owner: channelId } },
-    //     { $group: { _id: null, totalViews: { $sum: "$views" } } }
-    // ])
-    // const totalSubscribers = await Subscription.countDocuments({ channel: channelId })
-    // const totalLikes = await Like.countDocuments({ channel: channelId })
-    // res.status(200).json(new ApiResponse({
-    //     totalVideos,
-    //     totalViews: totalViews[0]?.totalViews || 0,
-    //     totalSubscribers,
-    //     totalLikes
-    // }))
+
 
 const getChannelStats = asyncHandler(async (req, res) => {
     // TODO: Get the channel stats like total video views, total subscribers, total videos, total likes etc.

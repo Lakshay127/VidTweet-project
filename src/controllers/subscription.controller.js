@@ -40,27 +40,27 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
-    const {channelId} = req.params
-    if(!isValidObjectId(channelId)){
+    const {subscriberId} = req.params
+    if(!isValidObjectId(subscriberId)){
         throw new ApiError(400, "Invalid Channel ID")
     }
-    const channel = await User.findById(channelId)
+    const channel = await User.findById(subscriberId)
     if(!channel){
         throw new ApiError(404, "Channel not found")
     }
     const subscribers = await Subscription
-        .find({channel: channelId})
+        .find({channel: subscriberId})
         .populate("subscriber", "username email")  
     return res.status(200).json(new ApiResponse(200, {subscribers}, "Channel Subscribers fetched successfully"))
 })
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
-    const { subscriberId } = req.params
-    if(!isValidObjectId(subscriberId)){
+    const { channelId } = req.params
+    if(!isValidObjectId(channelId)){
         throw new ApiError(400, "Invalid subscriber ID")
     }
-    const subscribedChannels = await Subscription.find({subscriber: subscriberId}).populate("channel", "username email")
+    const subscribedChannels = await Subscription.find({subscriber: channelId}).populate("channel", "username email")
     return res.status(200).json(new ApiResponse(200, {subscribedChannels}, "Subscribed Channels fetched successfully"))
     
 })
