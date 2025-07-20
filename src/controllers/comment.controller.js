@@ -22,7 +22,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
         sort: {createdAt: -1}
     }
     const comments = await Comment.paginate({video: videoId}, options)
-    if(!comments){
+    if(!comments || comments.docs.length === 0){
         throw new ApiError(404, "No comments found for this video")
     }
     return res

@@ -20,7 +20,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         // If like does not exist, making a new like
         const newLike = new Like({
             video: videoId,
-            user: req.user._id
+            likedBy: req.user._id
         })
         await newLike.save()
         return res.status(201).json(new ApiResponse(200, {}, "Video liked successfully"))
@@ -46,7 +46,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
         const newLike = new Like({
             comment: commentId,
             video: videoId,
-            user: req.user._id
+            likedBy: req.user._id
         })
         await newLike.save()
         return res.status(201).json(new ApiResponse(200, {}, "Comment liked successfully"))
@@ -67,7 +67,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     else{
         const newLike = new Like({
             tweet: tweetId,
-            user: req.user._id
+            likedBy: req.user._id
         })
         await newLike.save()    
         return res.status(201).json(new ApiResponse(200, {}, "Tweet liked successfully"))
@@ -76,7 +76,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 
 const getLikedVideos = asyncHandler(async (req, res) => {
     //TODO: get all liked videos
-    const likedVideos = await Like.find({user: req.user._id}).populate('video')
+    const likedVideos = await Like.find({likedBy: req.user._id}).populate('video')
     if (!likedVideos || likedVideos.length === 0) {
         return res.status(401).json(new ApiResponse(404, {}, "No liked videos found"))
     }
