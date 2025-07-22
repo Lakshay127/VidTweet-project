@@ -4,6 +4,7 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponses.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import { Video } from "../models/video.model.js"
+import { User } from "../models/user.model.js"
 
 const getVideoComments = asyncHandler(async (req, res) => {
     //TODO: get all comments for a video
@@ -16,18 +17,36 @@ const getVideoComments = asyncHandler(async (req, res) => {
     if(!video){
         throw new ApiError(404, "Video not found")
     }
-    const options = {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        sort: {createdAt: -1}
-    }
-    const comments = await Comment.paginate({video: videoId}, options)
-    if(!comments || comments.docs.length === 0){
-        throw new ApiError(404, "No comments found for this video")
-    }
+    const comments = await Comment.aggregate([
+        {
+            $match: {
+                video: new mongoose.Types.ObjectId(videoId),
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                foreignField: "_id",
+                localField: "owner",
+                as: "ownerDetails",
+            },
+        },
+        {
+            $unwind: "$ownerDetails",
+        },
+        {
+            $project: {
+                _id: 1,
+                content: 1,
+                ownerName: "$ownerDetails.userName",
+                avatar: "$ownerDetails.avatar",
+            },
+        },
+    ]);
+
     return res
         .status(200)
-        .json(new ApiResponse(200, comments, "Comments retrieved successfully"))
+        .json(new ApiResponse(200, comments, "All comments fetched successfully"));
 
 })
 
@@ -35,6 +54,10 @@ const addComment = asyncHandler(async (req, res) => {
     // TODO: add a comment to a video
     const {videoId} = req.params
     const {content} = req.body
+    if (!videoId) {
+        throw new ApiError(400, "Video ID is missing");
+    }
+  
     const video = await Video.findById(videoId)
     if(!video){
         throw new ApiError(404, "Video not found")
@@ -47,7 +70,7 @@ const addComment = asyncHandler(async (req, res) => {
     }
     const comment = await Comment.create({
         content,
-        video,
+        video: videoId,
         owner: req.user._id
     })
     if(!comment){
@@ -69,13 +92,23 @@ const updateComment = asyncHandler(async (req, res) => {
     if(!content || content.trim() === ""){
         throw new ApiError(400, "Content is required")
     }   
-    const comment = await Comment.findByIdAndUpdate(commentId, {content}, {new: true})
+    
+    const comment = await Comment.findById(commentId)
     if(!comment){
         throw new ApiError(404, "Comment not found")
     }
+    const user = await User.findById(req.user._id)
+    if(!user){
+        throw new ApiError(404, "User not found")
+    }
+    if(user._id.toString() !== comment.owner.toString()){
+        throw new ApiError(403, "We are not authorized to update the comment")
+    }
+    comment.content = content.trim()
+    const updatedComment = await comment.save()
     return res
         .status(200)
-        .json(new ApiResponse(200, comment, "Comment updated successfully"))
+        .json(new ApiResponse(200, updatedComment, "Comment updated successfully"))
 
 })
 
@@ -89,7 +122,14 @@ const deleteComment = asyncHandler(async (req, res) => {
     if(!comment){
         throw new ApiError(404, "Comment not found")
     }
-    await comment.deleteOne();
+    const user = await User.findById(req.user._id)
+    if(!user){
+        throw new ApiError(404, "User not found")
+    }
+    if(user._id.toString() !== comment.owner.toString()){
+        throw new ApiError(401, "You are not allowed to delete this comment")
+    }
+    await Comment.deleteOne({_id: new mongoose.Types.ObjectId(commentId)});
     return res.status(200).json(new ApiResponse(200, {}, "Comment deleted successfully"))
 })
 

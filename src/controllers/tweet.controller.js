@@ -11,13 +11,14 @@ const createTweet = asyncHandler(async (req, res) => {
     if(!content || content.trim().length === 0){
         throw new ApiError(400, "Content is required")
     }
-    if(!req.user || !req.user._id){
-        throw new ApiError(400, "User cannot be found")
+    
+    const user = await User.findById(req.user?._id)
+    if(!user){
+        throw new ApiError(404, "User not found")
     }
-    const owner = req.user._id
     const tweet = await Tweet.create({
         content, 
-        owner
+        owner: req.user._id
     })
     if(!tweet){
         throw new ApiError(400, "Tweet cannot be created")
@@ -35,7 +36,15 @@ const getUserTweets = asyncHandler(async (req, res) => {
     if(!user){
         throw new ApiError(404, "User not found")
     }
-    const tweets = await Tweet.find({owner: userId}).sort({createdAt: -1})
+    const tweets = await Tweet.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId),
+            },
+        },
+    ])
+
+
     if(!tweets || tweets.length === 0){
         return res.status(200).json(new ApiResponse(200, [], "No tweets found for this user"))
     }
@@ -48,15 +57,27 @@ const updateTweet = asyncHandler(async (req, res) => {
     if(!isValidObjectId(tweetId)){
         throw new ApiError(400, "Invalid Tweet")
     }
-    const {content} = req.body
-    if(!content || content.trim().length === 0){
+    const {newContent} = req.body
+    if(!newContent || newContent.trim().length === 0){
         throw new ApiError(400, "Content is required")
     }
-    const tweet = await Tweet.findByIdAndUpdate(tweetId, {content}, {new: true})
+    const tweet = await Tweet.findById(tweetId)
     if(!tweet){
-        throw new ApiError(500, "Error in updating Tweet")
+        throw new ApiError(404, "Tweet not found")
     }
-    return res.status(200).json(new ApiResponse(200, tweet, "Tweet updated successfully"))
+    const updatedTweet = await Tweet.findByIdAndUpdate(
+        tweetId, 
+        {
+            $set: {
+                content: newContent,
+            }
+        }, 
+        {
+            new: true
+        }
+    )
+    
+    return res.status(200).json(new ApiResponse(200, updatedTweet, "Tweet updated successfully"))
 })
 
 const deleteTweet = asyncHandler(async (req, res) => {
@@ -69,7 +90,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
     if(!tweet){
         throw new ApiError(404, "Tweet not found")
     }
-    await tweet.deleteOne()
+    await Tweet.deleteOne({id: tweet._id})
     return res.status(200).json(new ApiResponse(200, {}, "Tweet deleted successfully"))
 })
 
